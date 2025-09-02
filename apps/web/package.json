@@ -1,0 +1,9 @@
+{
+  "name": "nostr-shrine-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "nostr-tools": "^2.7.0"
+  }
+}

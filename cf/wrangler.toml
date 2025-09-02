@@ -1,0 +1,27 @@
+name = "nostr-shrine"
+main = "src/worker.ts"
+compatibility_date = "2025-09-02"
+workers_dev = true
+logpush = true
+
+[vars]
+RELAY_URLS = "wss://relay1.example,wss://relay2.example"
+# SHRINE_PUBKEY_HEX = ""
+# SHRINE_PRIVKEY_HEX = ""
+
+[[kv_namespaces]]
+binding = "RATE_KV"
+id = "kv-id-here"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nostr_shrine"
+database_id = "d1-id-here"
+
+[[durable_objects.bindings]]
+name = "RELAY_DO"
+class_name = "RelayDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RelayDO"]
