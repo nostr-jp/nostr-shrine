@@ -1,0 +1,10 @@
+# 開発用環境変数ファイルの例
+# このファイルを .dev.vars にコピーして使用してください
+
+# リレーURL（カンマ区切り）
+RELAY_URLS="wss://relay.damus.io,wss://nos.lol"
+
+# 神社の鍵ペア（公式再署名用）
+# 生成方法: npx nostr-tools generate
+SHRINE_PUBKEY_HEX="your_shrine_public_key_here"
+SHRINE_PRIVKEY_HEX="your_shrine_private_key_here"
