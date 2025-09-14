@@ -1,9 +1,25 @@
 {
   "name": "nostr-shrine-web",
-  "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite dev",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.9",
+    "@sveltejs/kit": "^2.39.1",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "svelte": "^4.2.20",
+    "svelte-check": "^3.8.6",
+    "typescript": "^5.9.2",
+    "vite": "^5.4.20"
+  },
   "dependencies": {
     "nostr-tools": "^2.7.0"
-  }
+  },
+  "type": "module"
 }

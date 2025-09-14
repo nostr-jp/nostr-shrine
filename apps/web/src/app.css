@@ -1,0 +1,172 @@
+/* 日本の伝統色を使用したカラーパレット */
+:root {
+  --shrine-red: #c73e1d;      /* 朱色 */
+  --shrine-gold: #e6b422;     /* 金色 */
+  --shrine-white: #f5f5dc;    /* 象牙色 */
+  --shrine-black: #2c2c2c;    /* 墨色 */
+  --shrine-gray: #8b8680;     /* 利休鼠 */
+  --shrine-green: #4d5d53;    /* 常盤色 */
+  --shrine-purple: #674598;   /* 江戸紫 */
+  
+  /* グラデーション */
+  --shrine-gradient: linear-gradient(135deg, var(--shrine-red) 0%, var(--shrine-gold) 100%);
+  --shrine-bg-gradient: linear-gradient(180deg, #faf8f5 0%, #f0ede8 100%);
+  
+  /* シャドウ */
+  --shrine-shadow: 0 4px 20px rgba(199, 62, 29, 0.15);
+  --shrine-shadow-hover: 0 8px 30px rgba(199, 62, 29, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+  background: var(--shrine-bg-gradient);
+  color: var(--shrine-black);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* 和風のスクロールバー */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--shrine-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--shrine-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--shrine-red);
+}
+
+/* 基本的なタイポグラフィ */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--shrine-black);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.6rem;
+}
+
+/* ボタンスタイル */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shrine-shadow);
+}
+
+.btn-primary {
+  background: var(--shrine-gradient);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shrine-shadow-hover);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--shrine-red);
+  border: 2px solid var(--shrine-red);
+}
+
+.btn-secondary:hover {
+  background: var(--shrine-red);
+  color: white;
+}
+
+/* カードスタイル */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shrine-shadow);
+  border: 1px solid rgba(199, 62, 29, 0.1);
+}
+
+.card:hover {
+  box-shadow: var(--shrine-shadow-hover);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* フォームスタイル */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--shrine-black);
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--shrine-gray);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--shrine-red);
+  box-shadow: 0 0 0 3px rgba(199, 62, 29, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* アニメーション */
+@keyframes shrine-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.shrine-glow {
+  animation: shrine-glow 2s ease-in-out infinite;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  .card { padding: 16px; }
+}
