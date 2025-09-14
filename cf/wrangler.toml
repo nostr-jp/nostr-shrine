@@ -5,28 +5,10 @@ workers_dev = true
 logpush = true
 
 [vars]
-RELAY_URLS = "wss://relay1.example,wss://relay2.example"
 # SHRINE_PUBKEY_HEX = ""
 # SHRINE_PRIVKEY_HEX = ""
 # ALLOWED_KINDS = "1,30023"
-# RELAY_NAME = "Nostr神社リレー"
-# RELAY_DESCRIPTION = "Cloudflare Workers上で動作するNostr神社リレー"
-# RELAY_CONTACT = "admin@example.com"
 
 [[kv_namespaces]]
 binding = "RATE_KV"
 id = "d8f0dc9a6b544216802d1b31d37ebd1a"
-
-# D1データベースは不要（Nostrイベントベースに変更）
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "nostr_shrine"
-# database_id = "79dfd045-ec13-4b94-84ef-06db5ad8ef47"
-
-[[durable_objects.bindings]]
-name = "RELAY_DO"
-class_name = "RelayDO"
-
-[[migrations]]
-tag = "v1"
-new_classes = ["RelayDO"]
