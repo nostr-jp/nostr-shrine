@@ -1,188 +1,144 @@
-# Nostr神社（方式A：Workers→リレー中継）スターター
+# Nostr神社 ⛩️
 
-Cloudflare Workers + Durable Objects + KV + Svelte（SPA）を使用したNostr署名システムです。
-ユーザーが署名した Nostr イベントを Workers で検証・中継し、神社による公式再署名機能も提供します。
-**全てのデータはNostrイベントとして管理され、DBは使用しません。**
+**分散型ソーシャルプロトコル「Nostr」上に構築されたデジタル神社システム**
 
-**本システムの特徴:**
-- 🚀 **高性能**: Cloudflareのエッジネットワークで高速処理
-- 🔒 **セキュア**: 入力検証、レート制限、適切なエラーハンドリング
-- 📊 **スケーラブル**: KV、Durable Objectsによる自動スケーリング
-- 🛠️ **型安全**: TypeScriptによる開発時型チェック
-- 🌐 **分散対応**: 複数Nostrリレーへの自動中継
-- 📝 **Nostrネイティブ**: 全データをNostrイベントとして管理（DBレス）
+Nostr神社は、伝統的な神社の概念をデジタル世界に再現し、Nostrネットワーク上で「参拝」「祈願」「お守り」などの体験を提供するプラットフォームです。
 
-## 機能
+## 🌸 Nostr神社とは
 
-- ✅ **署名検証**: 受け取ったNostrイベントの署名・ID検証
-- ✅ **イベントラッピング**: 受け取ったイベントをcontentに設定して神社が署名
-- ✅ **Nostrリレー**: Cloudflare自体がNostrリレーとして機能
-- ✅ **リレー中継**: 複数の外部Nostrリレーへの自動中継
-- ✅ **Accept/Reject条件**: 署名検証・時間制限・kind制限
-- ✅ **環境変数設定**: リレー名・説明・連絡先を環境変数で設定可能
+### 基本概念
+Nostr神社は、以下の要素を組み合わせた革新的なデジタル体験です：
 
-## Accept/Reject条件
+- **🏛️ デジタル神社**: Nostrネットワーク上に存在する仮想的な神社
+- **⛩️ 参拝システム**: ユーザーがNostrイベントを通じて参拝を行う
+- **🎋 祈願・願掛け**: 思いや願いをNostrイベントとして奉納
+- **🛡️ 神社の御印**: 神社が公式に認証・署名したイベント
+- **🌐 分散型運営**: 中央管理者なしで動作する自律的なシステム
 
-### ✅ OK条件（全て満たす必要あり）
-1. **署名検証**: イベントIDと署名が正しい
-2. **時間制限**: `created_at`が現在時刻の前後5分以内
-3. **kind制限**: 環境変数`ALLOWED_KINDS`で指定されたkindのみ
+### なぜNostr神社なのか？
 
-### ❌ NG条件（一つでも該当すればreject）
-- 署名が無効
-- イベントIDが不正
-- 作成時刻が5分を超えて古い/新しい
-- 許可されていないkind
+1. **永続性**: Nostrの分散型特性により、データが永続的に保存される
+2. **検閲耐性**: 中央集権的な削除や検閲から保護される
+3. **透明性**: 全ての参拝記録が公開され、検証可能
+4. **グローバル**: 世界中どこからでもアクセス可能
+5. **プライバシー**: 匿名での参拝も可能
 
-## 構成
-- `cf/` … Cloudflare 側（Workers / Durable Object / KV）
-- `apps/web/` … Svelte 簡易UI（参拝送信デモ）
+## 🎯 主な機能
 
-## セットアップ（Cloudflare 側）
+### 参拝システム
+- **デジタル参拝**: Nostrイベントを通じた参拝の記録
+- **参拝証明**: 神社による公式な参拝証明書の発行
+- **参拝履歴**: 過去の参拝記録の閲覧・管理
 
-### 1. 依存関係のインストール
+### 祈願・奉納
+- **願掛けイベント**: 願いや祈りをNostrイベントとして奉納
+- **お守りNFT**: デジタルお守りの発行・管理
+- **御朱印システム**: デジタル御朱印の収集
+
+### 神社運営
+- **神社認証**: 神社による公式イベントの署名・認証
+- **参拝者管理**: 参拝者との交流・コミュニケーション
+- **祭事告知**: 祭りやイベントの告知・運営
+
+## 🏗️ システム構成
+
+本システムは以下の技術スタックで構築されています：
+
+- **バックエンド**: Cloudflare Workers + Durable Objects + KV
+- **フロントエンド**: Svelte（SPA）
+- **プロトコル**: Nostr（分散型ソーシャルプロトコル）
+- **データ管理**: 全てのデータをNostrイベントとして管理（DBレス）
+
+### ディレクトリ構成
+```
+nostr-shrine/
+├── cf/                 # Cloudflare Workers（神社バックエンド）
+│   ├── src/
+│   │   ├── worker.ts   # メインWorkerロジック
+│   │   └── relay-do.ts # Durable Objects（リレー機能）
+│   └── scripts/        # 神社鍵ペア生成など
+└── apps/web/           # Svelte UI（参拝インターフェース）
+    └── src/
+        └── routes/     # 参拝画面・神社管理画面
+```
+
+## 🚀 クイックスタート
+
+### 1. 神社の設立（セットアップ）
 ```bash
+# プロジェクトのクローン
+git clone <repository-url>
+cd nostr-shrine
+
+# 神社バックエンドのセットアップ
 cd cf
-npm i
-```
+npm install
 
-### 1.5. Cloudflareリソースの作成
-```bash
-# KVストレージの作成（レート制限・重複チェック用）
-npx wrangler kv:namespace create "RATE_KV"
-```
-作成されたIDを `wrangler.toml` に設定してください。
-
-**注意**: D1データベースは使用しません。全データはNostrイベントとして管理されます。
-
-### 2. 神社の鍵ペア生成
-```bash
+# 神社の鍵ペア生成
 npm run generate-keys
-```
-生成された鍵ペアを `.dev.vars` ファイルに設定してください。
-
-### 3. セットアップ完了確認
-```bash
-# 設定ファイルの確認
-cat wrangler.toml
-
-# 環境変数ファイルの確認
-cat .dev.vars
-```
-
-**注意**: データベースのセットアップは不要です。schema.sqlは参考情報のみです。
-
-### 4. 開発サーバーの起動
-```bash
-# 型チェック（推奨）
-npx tsc --noEmit
 
 # 開発サーバー起動
-npx wrangler dev
+npm run dev
 ```
 
-### 5. 本番デプロイ
+### 2. 参拝インターフェースの起動
 ```bash
-# 型チェック
-npx tsc --noEmit
-
-# デプロイ
-npx wrangler deploy
+# 別ターミナルで
+cd apps/web
+npm install
+npm run dev
 ```
 
-### .dev.vars 例
-```
-RELAY_URLS="wss://relay.damus.io,wss://nos.lol"
-SHRINE_PUBKEY_HEX="your_shrine_public_key_here"
-SHRINE_PRIVKEY_HEX="your_shrine_private_key_here"
-ALLOWED_KINDS="1,30023"
-RELAY_NAME="Nostr神社リレー"
-RELAY_DESCRIPTION="Cloudflare Workers上で動作するNostr神社リレー"
-RELAY_CONTACT="admin@example.com"
-```
+### 3. 初回参拝
+1. ブラウザで `http://localhost:5173` にアクセス
+2. Nostrクライアント（Alby、nos2x等）で鍵ペアを準備
+3. 参拝メッセージを入力して「参拝する」をクリック
+4. 神社からの参拝証明を受け取り
 
-> 公式再署名を使う場合は `SHRINE_PUBKEY_HEX` / `SHRINE_PRIVKEY_HEX` を設定してください（本番では NIP-46 などで分離推奨）。
+## 🎌 使い方
 
-## API エンドポイント
+### 参拝者として
+1. **参拝**: 願いや感謝の気持ちをNostrイベントとして奉納
+2. **参拝証明**: 神社から公式な参拝証明書を受け取り
+3. **御朱印収集**: 複数の神社を巡って御朱印を集める
+4. **お守り**: デジタルお守りを受け取り・管理
 
-### 基本エンドポイント
-- `GET /` - リレー情報（NIP-11対応）
-- `GET /health` - ヘルスチェック
-- `GET /shrine/pubkey` - 神社の公開鍵取得
+### 神社運営者として
+1. **神社開設**: 独自の神社をNostrネットワーク上に開設
+2. **参拝者対応**: 参拝者の願いに対する応答・祈祷
+3. **祭事運営**: 季節の祭りやイベントの企画・運営
+4. **コミュニティ**: 参拝者コミュニティの育成・管理
 
-### Nostrリレー
-- `GET /ws` - WebSocketエンドポイント（Nostrリレーとして機能）
+## 📚 詳細ドキュメント
 
-### イベント処理
-- `POST /ingest` - 受け取ったイベントの署名検証・リレー中継
-- `POST /wrap` - 受け取ったイベントをcontentにラップして神社が署名
+- **[API仕様書](./API.md)**: 技術的な実装詳細とAPI仕様
+- **[開発ガイド](./DEVELOPMENT.md)**: 開発環境のセットアップと貢献方法
+- **[Nostr仕様](https://github.com/nostr-protocol/nips)**: Nostrプロトコルの公式仕様
 
-### 使用例
-```bash
-# リレー情報取得（NIP-11）
-curl -H "Accept: application/nostr+json" https://your-worker.your-subdomain.workers.dev/
+## 🌟 特徴
 
-# ヘルスチェック
-curl -X GET https://your-worker.your-subdomain.workers.dev/health
+- **🔒 セキュア**: Nostrの暗号学的署名による安全性
+- **🌐 分散型**: 中央集権的な管理者なしで動作
+- **⚡ 高速**: Cloudflareエッジネットワークによる高速処理
+- **💰 低コスト**: サーバーレスアーキテクチャによる運用コスト削減
+- **🔓 オープン**: オープンソースで透明性を確保
+- **🌍 グローバル**: 世界中どこからでもアクセス可能
 
-# 神社の公開鍵取得
-curl -X GET https://your-worker.your-subdomain.workers.dev/shrine/pubkey
+## 🤝 コミュニティ
 
-# Nostrクライアントでリレーに接続
-# WebSocketエンドポイント: wss://your-worker.your-subdomain.workers.dev/ws
+- **Discord**: [Nostr神社コミュニティ](https://discord.gg/nostr-shrine)
+- **Twitter**: [@NostrShrine](https://twitter.com/NostrShrine)
+- **Nostr**: `npub1shrine...` でフォロー
 
-# イベントをcontentにラップして神社が署名
-curl -X POST https://your-worker.your-subdomain.workers.dev/wrap \
-  -H "Content-Type: application/json" \
-  -d '{"kind": 1, "content": "神社への参拝記録", "tags": [], "pubkey": "user_pubkey", "created_at": 1705315800, "id": "event_id", "sig": "signature"}'
+## 📄 ライセンス
 
-# 署名済みイベントをリレーに中継
-curl -X POST https://your-worker.your-subdomain.workers.dev/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"kind": 1, "content": "Hello Nostr", "tags": [], "pubkey": "user_pubkey", "created_at": 1705315800, "id": "event_id", "sig": "signature"}'
-```
+MIT License - 詳細は [LICENSE](./LICENSE) ファイルを参照してください。
 
-## 技術仕様
+## 🙏 謝辞
 
-### 署名システム
-- **ライブラリ**: `nostr-tools` v2.7.0
-- **署名関数**: `finalizeEvent` (秘密鍵はUint8Array形式)
-- **検証関数**: `verifyEvent`, `getEventHash`
-- **ラッピング**: 受け取ったイベントをJSONでcontentに設定してkind:1で署名
+このプロジェクトは以下の技術・コミュニティに支えられています：
 
-### Accept/Reject条件
-- **署名検証**: イベントID・署名の検証
-- **時間制限**: created_atが現在時刻の前後5分以内
-- **kind制限**: 環境変数ALLOWED_KINDSで指定されたkindのみ
-- **リレー中継**: 条件を満たしたイベントのみリレーに送信
-
-### イベントラッピング例
-```json
-// 元のイベント
-{
-  "kind": 1,
-  "content": "Hello Nostr",
-  "tags": [],
-  "pubkey": "user_pubkey",
-  "created_at": 1705315800,
-  "id": "event_id",
-  "sig": "signature"
-}
-
-// ラップ後（神社が署名）
-{
-  "kind": 1,
-  "content": "{\"kind\":1,\"content\":\"Hello Nostr\",\"tags\":[],\"pubkey\":\"user_pubkey\",\"created_at\":1705315800,\"id\":\"event_id\",\"sig\":\"signature\"}",
-  "tags": [],
-  "pubkey": "shrine_pubkey",
-  "created_at": 1705315900,
-  "id": "new_event_id",
-  "sig": "shrine_signature"
-}
-```
-
-## セットアップ（Svelte 側）
-このスターターは最小のページファイルのみ含みます。既存の Vite + Svelte プロジェクトに `apps/web/src` を持ち込むか、適宜組み込んでください。
-
-## ライセンス
-MIT
+- [Nostr Protocol](https://github.com/nostr-protocol/nips) - 分散型ソーシャルプロトコル
+- [Cloudflare Workers](https://workers.cloudflare.com/) - エッジコンピューティングプラットフォーム
+- [Svelte](https://svelte.dev/) - モダンWebフレームワーク
+- [nostr-tools](https://github.com/nbd-wtf/nostr-tools) - Nostrライブラリ

@@ -1,0 +1,342 @@
+openapi: 3.0.3
+info:
+  title: Nostr神社 API
+  description: |
+    Cloudflare Workers + KV を使用したNostr署名・ラッピングシステムのAPI仕様書です。
+    
+    ## 主な機能
+    - Nostrイベントのラッピング・署名
+    - 指定リレーへの自動中継
+    - 神社による公式認証
+    
+    ## 処理フロー
+    1. **署名検証**: イベントID・署名の検証
+    2. **時間制限**: created_atが現在時刻の前後5分以内
+    3. **kind制限**: 環境変数ALLOWED_KINDSで指定されたkindのみ
+    4. **ラッピング**: 条件を満たしたイベントをcontentにラップ
+    5. **神社署名**: 神社の秘密鍵で署名
+    6. **リレー中継**: 指定されたリレーに送信
+    7. **レスポンス**: ラッピング済みイベントを返却
+  version: 1.0.0
+  contact:
+    name: Nostr神社
+    url: https://github.com/your-repo/nostr-shrine
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-worker.your-subdomain.workers.dev
+    description: 本番環境
+  - url: http://localhost:8787
+    description: 開発環境
+
+paths:
+  /health:
+    get:
+      summary: ヘルスチェック
+      description: システムの稼働状況を確認します
+      operationId: healthCheck
+      tags:
+        - システム
+      responses:
+        '200':
+          description: システム正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
+        '500':
+          description: システムエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /shrine/pubkey:
+    get:
+      summary: 神社の公開鍵取得
+      description: 神社の公開鍵を16進数形式で取得します
+      operationId: getShrinePublicKey
+      tags:
+        - 神社情報
+      responses:
+        '200':
+          description: 神社の公開鍵
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pubkey:
+                    type: string
+                    description: 神社の公開鍵（16進数）
+                    example: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+        '500':
+          description: システムエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wrap:
+    post:
+      summary: イベントラッピング・署名・中継
+      description: |
+        受け取ったNostrイベントをラッピングして神社が署名し、指定リレーに中継します。
+        
+        ## 処理内容
+        1. 受信したイベントの検証（署名・ID・時間・kind）
+        2. イベントをJSONでcontentにラッピング
+        3. 神社の秘密鍵で署名
+        4. クライアントが指定したリレーに送信（relaysが空の場合は送信しない）
+        5. ラッピング済みイベントをレスポンスで返却
+      operationId: wrapEvent
+      tags:
+        - イベント処理
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WrapRequest'
+            examples:
+              with_relays:
+                summary: リレー指定あり
+                value:
+                  relays: ["wss://relay.damus.io", "wss://nos.lol"]
+                  nostr_event:
+                    kind: 1
+                    content: "神社への参拝記録"
+                    tags: []
+                    pubkey: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+                    created_at: 1705315800
+                    id: "4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65"
+                    sig: "3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5"
+              without_relays:
+                summary: リレー指定なし（空配列）
+                value:
+                  relays: []
+                  nostr_event:
+                    kind: 1
+                    content: "神社への参拝記録"
+                    tags: []
+                    pubkey: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+                    created_at: 1705315800
+                    id: "4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65"
+                    sig: "3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5"
+              null_relays:
+                summary: リレー指定なし（null）
+                value:
+                  relays: null
+                  nostr_event:
+                    kind: 1
+                    content: "神社への参拝記録"
+                    tags: []
+                    pubkey: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+                    created_at: 1705315800
+                    id: "4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65"
+                    sig: "3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5"
+      responses:
+        '200':
+          description: ラッピング・署名・中継成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  wrapped_event:
+                    $ref: '#/components/schemas/NostrEvent'
+                  relayed_to:
+                    type: array
+                    items:
+                      type: string
+                    description: 中継先リレーのURL一覧
+                    example: ["wss://relay.damus.io", "wss://nos.lol"]
+              examples:
+                with_relays:
+                  summary: リレー指定あり
+                  value:
+                    success: true
+                    wrapped_event:
+                      kind: 1
+                      content: "{\"kind\":1,\"content\":\"神社への参拝記録\",\"tags\":[],\"pubkey\":\"02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc\",\"created_at\":1705315800,\"id\":\"4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65\",\"sig\":\"3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5\"}"
+                      tags: []
+                      pubkey: "shrine_pubkey_hex"
+                      created_at: 1705315900
+                      id: "new_event_id_hex"
+                      sig: "shrine_signature_hex"
+                    relayed_to: ["wss://relay.damus.io", "wss://nos.lol"]
+                without_relays:
+                  summary: リレー指定なし（空配列）
+                  value:
+                    success: true
+                    wrapped_event:
+                      kind: 1
+                      content: "{\"kind\":1,\"content\":\"神社への参拝記録\",\"tags\":[],\"pubkey\":\"02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc\",\"created_at\":1705315800,\"id\":\"4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65\",\"sig\":\"3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5\"}"
+                      tags: []
+                      pubkey: "shrine_pubkey_hex"
+                      created_at: 1705315900
+                      id: "new_event_id_hex"
+                      sig: "shrine_signature_hex"
+                    relayed_to: []
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_signature:
+                  summary: 署名が無効
+                  value:
+                    success: false
+                    error: "Invalid signature"
+                    code: "INVALID_SIGNATURE"
+                invalid_event_id:
+                  summary: イベントIDが不正
+                  value:
+                    success: false
+                    error: "Invalid event ID"
+                    code: "INVALID_EVENT_ID"
+                time_limit_exceeded:
+                  summary: 時間制限超過
+                  value:
+                    success: false
+                    error: "Event timestamp is outside allowed time window (±5 minutes)"
+                    code: "TIME_LIMIT_EXCEEDED"
+                kind_not_allowed:
+                  summary: 許可されていないkind
+                  value:
+                    success: false
+                    error: "Event kind not allowed"
+                    code: "KIND_NOT_ALLOWED"
+        '500':
+          description: システムエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    WrapRequest:
+      type: object
+      required:
+        - nostr_event
+      properties:
+        relays:
+          type: array
+          items:
+            type: string
+            format: uri
+            pattern: '^wss?://'
+          description: |
+            中継先リレーのURL一覧。
+            - null または空配列の場合、リレーに送信しない
+            - WebSocketプロトコル（ws://またはwss://）のみ対応
+          example: ["wss://relay.damus.io", "wss://nos.lol"]
+          nullable: true
+        nostr_event:
+          $ref: '#/components/schemas/NostrEvent'
+      example:
+        relays: ["wss://relay.damus.io", "wss://nos.lol"]
+        nostr_event:
+          kind: 1
+          content: "神社への参拝記録"
+          tags: []
+          pubkey: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+          created_at: 1705315800
+          id: "4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65"
+          sig: "3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5"
+
+    NostrEvent:
+      type: object
+      required:
+        - kind
+        - content
+        - tags
+        - pubkey
+        - created_at
+        - id
+        - sig
+      properties:
+        kind:
+          type: integer
+          description: Nostrイベントの種類
+          example: 1
+        content:
+          type: string
+          description: イベントの内容
+          example: "神社への参拝記録"
+        tags:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: イベントのタグ
+          example: []
+        pubkey:
+          type: string
+          description: 送信者の公開鍵（16進数）
+          example: "02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc"
+        created_at:
+          type: integer
+          description: イベント作成時刻（Unix timestamp）
+          example: 1705315800
+        id:
+          type: string
+          description: イベントID（16進数）
+          example: "4376c65d2f232afbe9b882a35baa4f6fe8667c4e684749af565f981833ed6a65"
+        sig:
+          type: string
+          description: イベントの署名（16進数）
+          example: "3045022100fd0954de564e0c203cb4dd8b4b078a3e8c7e5a9b8c6a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5"
+
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: エラーメッセージ
+          example: "Invalid request"
+        code:
+          type: string
+          description: エラーコード
+          example: "INVALID_REQUEST"
+        details:
+          type: object
+          description: エラーの詳細情報
+          additionalProperties: true
+
+  securitySchemes: {}
+
+tags:
+  - name: システム
+    description: システム関連のエンドポイント
+  - name: 神社情報
+    description: 神社の情報取得
+  - name: イベント処理
+    description: Nostrイベントの処理・ラッピング
+
+externalDocs:
+  description: Nostr Protocol Specification
+  url: https://github.com/nostr-protocol/nips
