@@ -222,6 +222,12 @@ paths:
                     success: false
                     error: "Event kind not allowed"
                     code: "KIND_NOT_ALLOWED"
+                invalid_relay_url:
+                  summary: 無効なリレーURL
+                  value:
+                    success: false
+                    error: "Invalid relay URL. Only wss:// protocol is allowed"
+                    code: "INVALID_RELAY_URL"
         '500':
           description: システムエラー
           content:
@@ -241,11 +247,11 @@ components:
           items:
             type: string
             format: uri
-            pattern: '^wss?://'
+            pattern: '^wss://'
           description: |
             中継先リレーのURL一覧。
             - null または空配列の場合、リレーに送信しない
-            - WebSocketプロトコル（ws://またはwss://）のみ対応
+            - セキュアWebSocketプロトコル（wss://）のみ対応
           example: ["wss://relay.damus.io", "wss://nos.lol"]
           nullable: true
         nostr_event:

@@ -77,6 +77,9 @@ npm install
 # 神社の鍵ペア生成
 npm run generate-keys
 
+# テスト実行（推奨）
+npm test
+
 # 開発サーバー起動
 npm run dev
 ```
@@ -109,9 +112,31 @@ npm run dev
 3. **祭事運営**: 季節の祭りやイベントの企画・運営
 4. **コミュニティ**: 参拝者コミュニティの育成・管理
 
+## 🧪 テスト
+
+```bash
+cd cf
+
+# 全テスト実行
+npm test
+
+# ウォッチモードでテスト実行
+npm run test:watch
+
+# カバレッジ付きテスト実行
+npm run test:coverage
+```
+
+### テスト内容
+- **単体テスト**: 各APIエンドポイントの動作確認
+- **統合テスト**: 全体のワークフロー検証
+- **バリデーションテスト**: 入力検証とエラーハンドリング
+- **境界値テスト**: 時間制限やkind制限の境界値確認
+
 ## 📚 詳細ドキュメント
 
 - **[API仕様書](./API.md)**: 技術的な実装詳細とAPI仕様
+- **[Swagger仕様書](./swagger.yaml)**: OpenAPI 3.0.3形式のAPI仕様
 - **[開発ガイド](./DEVELOPMENT.md)**: 開発環境のセットアップと貢献方法
 - **[Nostr仕様](https://github.com/nostr-protocol/nips)**: Nostrプロトコルの公式仕様
 
