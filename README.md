@@ -51,6 +51,27 @@ nostr-shrine/
         └── routes/     # おみくじ・参拝画面
 ```
 
+## アクティビティの署名検証アーキテクチャ
+
+### 通常のイベント検証ロジック
+
+```mermaid
+sequenceDiagram
+    User->>Web(Front): 神社に対する何らかの操作
+    Web(Front)->>Web(Front): 操作に対するNostrイベント発行
+    Web(Front)->>Web(Front): イベントに署名
+    Web(Front)->>Web(Backend): イベント検証リクエスト
+    Web(Backend)->>Web(Front): イベント検証結果
+    alt: 検証OK
+        note over Web(Backend): 拡散リレーがあったらPost
+        Web(Backend)->>Web(Backend): イベントをリレーに送信
+        Web(Backend)->>Web(Front): イベント検証結果
+    else: 検証NG
+        Web(Backend)->>Web(Front): イベント検証結果
+    end
+    Web(Front)->>Web(Front): 画面処理
+```
+
 ## 🚀 クイックスタート
 
 ### 1. バックエンドのセットアップ
@@ -141,7 +162,15 @@ npm run dev
 ### `/wrap` エンドポイントの動作
 1. ユーザーが署名したNostrイベントを受信
 2. 署名・ID・時間制限（±5分）・kind制限をチェック
-3. 受け取ったイベントをJSONでcontentに設定してラッピング
+3. 神社の検証済みイベントを生成
+   - 受け取ったイベントをJSONでcontentに設定してラッピング
+   - kind = 元のkind + 100 として設定（例：kind 1 → kind 101、kind 30023 → kind 30123）
+   - これによりタイムラインに表示されず、神社認証済みイベントとして識別可能
+   - tagsに以下を追加して元のイベントが追跡可能にする：
+     - `["e", "元のイベントID", "", "mention"]` - 元のイベントを参照
+     - `["original_author", "元の投稿者の公開鍵"]` - 元の投稿者を参照（通知なし）
+     - `["original_kind", "元のkind"]` - 元のイベントkindを記録
+   - カスタムタグを使用することで通知を完全に回避し、神社認証の証明として機能する
 4. 神社の秘密鍵でラッピングしたイベントに署名
 5. 指定されたリレーに神社署名済みイベントを送信
 6. ラッピング済みイベントをレスポンスで返却
